@@ -11,8 +11,16 @@
 
 ## インストール
 
+### Step 1: マーケットプレイスを追加
+
 ```bash
-/plugin install daishiman/meta-skill-creator
+/plugin marketplace add daishiman/meta-skill-creator
+```
+
+### Step 2: プラグインをインストール
+
+```bash
+/plugin install skill-creator
 ```
 
 インストール後、Claude Code に話しかけるだけ：
@@ -96,7 +104,8 @@
 ```
 meta-skill-creator/
 ├── .claude-plugin/
-│   └── plugin.json          # プラグインメタデータ
+│   ├── marketplace.json     # マーケットプレイス定義（配布用）
+│   └── plugin.json          # プラグインメタデータ（詳細設定）
 ├── skills/
 │   └── skill-creator/       # メインスキル
 │       ├── SKILL.md         # スキル定義（必須）
@@ -124,6 +133,29 @@ Claude Code プラグインの仕様：
 | **プラグイン配布** | `skills/` （ルート直下） ✅ |
 
 プラグインとして配布する場合、`skills/` はルート直下に配置する必要があります。
+
+### marketplace.json と plugin.json
+
+プラグイン配布には両方のファイルが必要です：
+
+| ファイル | 役割 | 必須項目 |
+|----------|------|----------|
+| **marketplace.json** | 配布用レジストリ定義 | `$schema`, `name`, `owner`, `plugins[]` |
+| **plugin.json** | 詳細なプラグイン設定 | `name`, `version`, `description`, `activation` |
+
+**marketplace.json** - `/plugin marketplace add` で使用：
+```json
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "meta-skill-creator",
+  "owner": { "name": "daishiman" },
+  "plugins": [
+    { "name": "skill-creator", "source": "./" }
+  ]
+}
+```
+
+**plugin.json** - プラグインの詳細設定（activation, modes, capabilities等）を定義。
 
 ---
 
