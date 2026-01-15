@@ -140,14 +140,14 @@ Claude Code プラグインの仕様：
 
 | ファイル | 役割 | 必須項目 |
 |----------|------|----------|
-| **marketplace.json** | 配布用レジストリ定義 | `$schema`, `name`, `owner`, `plugins[]` |
-| **plugin.json** | 詳細なプラグイン設定 | `name`, `version`, `description`, `activation` |
+| **marketplace.json** | 配布用レジストリ定義 | `marketplace`, `owner`, `plugins[]` |
+| **plugin.json** | プラグインマニフェスト | `name`, `version`, `description`, `author`, `components` |
 
 **marketplace.json** - `/plugin marketplace add` で使用：
 ```json
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "meta-skill-creator",
+  "marketplace": "meta-skill-creator",
   "owner": { "name": "daishiman" },
   "plugins": [
     { "name": "skill-creator", "source": "./" }
@@ -155,7 +155,20 @@ Claude Code プラグインの仕様：
 }
 ```
 
-**plugin.json** - プラグインの詳細設定（activation, modes, capabilities等）を定義。
+**plugin.json** - プラグインの基本設定とコンポーネントパスを定義：
+```json
+{
+  "name": "skill-creator",
+  "version": "5.2.1",
+  "description": "...",
+  "author": { "name": "daishiman" },
+  "components": {
+    "skills": ["skills/skill-creator/"]
+  }
+}
+```
+
+> **注意**: plugin.json には `name`, `version`, `description`, `author`, `repository`, `keywords`, `license`, `components` のみ使用可能。その他のフィールド（activation, modes等）は無効です。
 
 ---
 
