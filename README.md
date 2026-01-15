@@ -141,7 +141,7 @@ Claude Code プラグインの仕様：
 | ファイル | 役割 | 必須項目 |
 |----------|------|----------|
 | **marketplace.json** | 配布用レジストリ定義 | `name`, `description`, `owner`, `plugins[]` |
-| **plugin.json** | プラグインマニフェスト | `name`, `version`, `description`, `author`, `components` |
+| **plugin.json** | プラグインマニフェスト | `name`, `description`, `author` |
 
 **marketplace.json** - `/plugin marketplace add` で使用：
 ```json
@@ -156,20 +156,16 @@ Claude Code プラグインの仕様：
 }
 ```
 
-**plugin.json** - プラグインの基本設定とコンポーネントパスを定義：
+**plugin.json** - プラグインの基本設定（最小限のフィールドのみ）：
 ```json
 {
   "name": "skill-creator",
-  "version": "5.2.1",
-  "description": "...",
-  "author": { "name": "daishiman" },
-  "components": {
-    "skills": ["skills/skill-creator/"]
-  }
+  "description": "プラグインの説明",
+  "author": { "name": "daishiman" }
 }
 ```
 
-> **注意**: plugin.json には `name`, `version`, `description`, `author`, `repository`, `keywords`, `license`, `components` のみ使用可能。その他のフィールド（activation, modes等）は無効です。
+> **注意**: plugin.json には `name`, `description`, `author` のみ使用可能。その他のフィールド（version, components, keywords等）は無効です。バージョン等の詳細はmarketplace.jsonで定義します。
 
 ---
 

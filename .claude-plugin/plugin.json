@@ -1,22 +1,8 @@
 {
   "name": "skill-creator",
-  "version": "5.2.1",
   "description": "スキルを作成・更新・プロンプト改善するためのメタスキル。ユーザーと対話しながら共創し、抽象的なアイデアから具体的な実装まで柔軟に対応。",
   "author": {
     "name": "daishiman",
     "email": "daishimanju@gmail.com"
-  },
-  "repository": "https://github.com/daishiman/meta-skill-creator",
-  "keywords": [
-    "skill",
-    "agent",
-    "automation",
-    "workflow",
-    "claude",
-    "meta-skill"
-  ],
-  "license": "MIT",
-  "components": {
-    "skills": ["skills/skill-creator/"]
   }
 }
