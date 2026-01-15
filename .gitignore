@@ -49,6 +49,8 @@ out/
 # Claude Code / MCP
 .playwright-mcp/
 .mcp-cache/
+.claude/settings.json
+.claude/settings.local.json
 
 # Runtime generated (optional - uncomment if you don't want to track)
 # skills/**/LOGS.md
