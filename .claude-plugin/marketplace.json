@@ -1,0 +1,12 @@
+{
+  "name": "meta-skill-creator-marketplace",
+  "description": "Meta Skill Creator - スキル作成・更新・プロンプト改善のためのメタスキル",
+  "version": "1.0.0",
+  "plugins": [
+    {
+      "name": "meta-skill-creator",
+      "path": ".",
+      "description": "スキルを作成・更新・プロンプト改善するためのメタスキル"
+    }
+  ]
+}
