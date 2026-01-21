@@ -38,7 +38,7 @@ descriptionがスキルの主要なトリガーメカニズムであることを
 | ------------------- | ------------------------- |
 | 18-skills.md §3.2.3 | description記述形式に準拠 |
 
-> 詳細: See [references/skill-structure.md](../references/skill-structure.md)
+> 詳細: See [references/skill-structure.md](.claude/skills/skill-creator/references/skill-structure.md)
 
 ---
 

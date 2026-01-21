@@ -115,7 +115,7 @@
 
 ```json
 {
-  "$schema": "../schemas/custom-script-design.json",
+  "$schema": ".claude/skills/skill-creator/schemas/custom-script-design.json",
   "name": "{{string: スクリプト名}}",
   "purpose": "{{string: スクリプトの目的}}",
   "runtime": "{{enum: node|python|bash|bun|deno}}",

@@ -25,6 +25,14 @@
     ▼
 [パターン分析] ← analyze-feedback (LLM)
     │
+    ├─ patterns[] あり ─────────────┐
+    │                               ▼
+    │                    [パターン保存] ← save-patterns (LLM)
+    │                               │
+    │                               ▼
+    │                    references/patterns.md 更新
+    │
+    ├─ suggestions[] あり
     ▼
 [改善提案生成] ← design-self-improvement (LLM)
     │
@@ -341,7 +349,9 @@ node scripts/apply_self_improvement.js \
 
 ## 関連リソース
 
-- **エージェント**: See [agents/analyze-feedback.md](../agents/analyze-feedback.md)
-- **エージェント**: See [agents/design-self-improvement.md](../agents/design-self-improvement.md)
-- **スクリプト**: See [scripts/collect_feedback.js](../scripts/collect_feedback.js)
-- **スキーマ**: See [schemas/feedback-record.json](../schemas/feedback-record.json)
+- **エージェント**: See [agents/analyze-feedback.md](.claude/skills/skill-creator/agents/analyze-feedback.md)
+- **エージェント**: See [agents/design-self-improvement.md](.claude/skills/skill-creator/agents/design-self-improvement.md)
+- **エージェント**: See [agents/save-patterns.md](.claude/skills/skill-creator/agents/save-patterns.md)
+- **スクリプト**: See [scripts/collect_feedback.js](.claude/skills/skill-creator/scripts/collect_feedback.js)
+- **スキーマ**: See [schemas/feedback-record.json](.claude/skills/skill-creator/schemas/feedback-record.json)
+- **パターン集**: See [references/patterns.md](patterns.md)

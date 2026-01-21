@@ -27,6 +27,41 @@ const EXIT_PATH_NOT_FOUND = 3;
 const DEFAULT_RESOURCES = ["agents", "scripts", "references", "assets"];
 const ALLOWED_RESOURCES = new Set(DEFAULT_RESOURCES);
 
+/**
+ * スキル用 package.json を生成
+ * @param {string} skillName - スキル名
+ * @returns {string} JSON文字列
+ */
+function createPackageJson(skillName) {
+  const today = new Date().toISOString().split("T")[0];
+  return JSON.stringify(
+    {
+      name: `@skills/${skillName}`,
+      version: "1.0.0",
+      description: `Claude Code skill: ${skillName}`,
+      type: "module",
+      private: true,
+      scripts: {
+        validate: "node scripts/validate_all.js",
+        log: "node scripts/log_usage.js",
+        "deps:install": "pnpm install",
+        "deps:add": "pnpm add",
+      },
+      engines: {
+        node: ">=18.0.0",
+      },
+      dependencies: {},
+      devDependencies: {},
+      keywords: ["claude-code", "skill"],
+      author: "AIWorkflowOrchestrator",
+      license: "UNLICENSED",
+      created: today,
+    },
+    null,
+    2,
+  );
+}
+
 function showHelp() {
   console.log(`
 スキル初期化スクリプト (18-skills.md §6.4 準拠)
@@ -52,11 +87,19 @@ Examples:
 Created structure (selected resources only):
   <skill-name>/
   ├── SKILL.md          # メインファイル（TODO付きテンプレート）
+  ├── package.json      # 依存関係管理（PNPM使用）
+  ├── LOGS.md           # 実行ログ（フィードバック機構）
+  ├── EVALS.json        # メトリクス（フィードバック機構）
   ├── agents/           # Task仕様書ディレクトリ（任意）
   ├── scripts/          # スクリプトディレクトリ（任意）
-  │   └── log_usage.js # フィードバック記録スクリプト（scripts指定時のみ）
+  │   └── log_usage.js  # フィードバック記録スクリプト（scripts指定時のみ）
   ├── references/       # 参照資料ディレクトリ（任意）
+  │   └── patterns.md   # 成功/失敗パターン（references指定時のみ）
   └── assets/           # アセットディレクトリ（任意）
+
+Notes:
+  - 各スキルは自己完結型（独自のnode_modulesを持つ）
+  - 依存関係の追加: cd <skill-dir> && pnpm add <package>
   `);
 }
 
@@ -302,6 +345,98 @@ main().catch((err) => {
 `;
 }
 
+function createLogsTemplate() {
+  return `# Skill Usage Logs
+
+このファイルにはスキルの使用記録が追記されます。
+
+---
+
+`;
+}
+
+function createEvalsTemplate(skillName) {
+  const today = new Date().toISOString().split("T")[0];
+  return JSON.stringify(
+    {
+      skillName: skillName,
+      currentLevel: 1,
+      metrics: {
+        totalUsageCount: 0,
+        successCount: 0,
+        failureCount: 0,
+        successRate: 0,
+        averageDuration: 0,
+        lastEvaluated: null,
+      },
+      levelHistory: [
+        {
+          level: 1,
+          achievedAt: today,
+        },
+      ],
+      patterns: {
+        commonErrors: [],
+        slowPhases: [],
+        successPatterns: [],
+      },
+    },
+    null,
+    2,
+  );
+}
+
+function createPatternsTemplate() {
+  return `# 実行パターン集
+
+> **読み込み条件**: スキル実行時、改善検討時
+> **更新タイミング**: パターンを発見したら追記
+
+---
+
+## 成功パターン
+
+成功した実行から学んだベストプラクティス。
+
+<!--
+### パターン名
+- **状況**: どんな状況で
+- **アプローチ**: 何をしたか
+- **結果**: なぜうまくいったか
+- **適用条件**: いつ使うべきか
+- **発見日**: YYYY-MM-DD
+-->
+
+---
+
+## 失敗パターン（避けるべきこと）
+
+失敗から学んだアンチパターン。
+
+<!--
+### パターン名
+- **状況**: どんな状況で
+- **問題**: 何が起きたか
+- **原因**: なぜ失敗したか
+- **教訓**: 何を学んだか
+- **発見日**: YYYY-MM-DD
+-->
+
+---
+
+## ガイドライン
+
+実行時の判断基準。
+
+<!--
+### 判断基準名
+- **状況**: どんな時に適用
+- **指針**: どう判断すべきか
+- **根拠**: なぜそう判断するか
+-->
+`;
+}
+
 async function main() {
   const args = process.argv.slice(2);
 
@@ -376,6 +511,33 @@ async function main() {
       "utf-8",
     );
 
+    // package.json 作成（自己完結型スキルのため）
+    writeFileSync(
+      join(skillDir, "package.json"),
+      createPackageJson(skillName),
+      "utf-8",
+    );
+
+    // フィードバック機構ファイル作成
+    // LOGS.md
+    writeFileSync(join(skillDir, "LOGS.md"), createLogsTemplate(), "utf-8");
+
+    // EVALS.json
+    writeFileSync(
+      join(skillDir, "EVALS.json"),
+      createEvalsTemplate(skillName),
+      "utf-8",
+    );
+
+    // references/patterns.md (references ディレクトリが存在する場合)
+    if (resources.includes("references")) {
+      writeFileSync(
+        join(skillDir, "references", "patterns.md"),
+        createPatternsTemplate(),
+        "utf-8",
+      );
+    }
+
     if (includeLogUsage) {
       // log_usage.js 作成
       writeFileSync(
@@ -385,9 +547,17 @@ async function main() {
       );
     }
 
-    const createdItems = [join(skillDir, "SKILL.md")];
+    const createdItems = [
+      join(skillDir, "SKILL.md"),
+      join(skillDir, "package.json"),
+      join(skillDir, "LOGS.md"),
+      join(skillDir, "EVALS.json"),
+    ];
     for (const dir of resources) {
       createdItems.push(`${join(skillDir, dir)}/`);
+    }
+    if (resources.includes("references")) {
+      createdItems.push(join(skillDir, "references", "patterns.md"));
     }
     if (includeLogUsage) {
       createdItems.push(join(skillDir, "scripts", "log_usage.js"));
@@ -399,6 +569,9 @@ async function main() {
     }
     if (resources.includes("references")) {
       nextSteps.push("必要に応じて references/*.md を作成");
+    }
+    if (resources.includes("scripts")) {
+      nextSteps.push("必要に応じて pnpm add <package> で依存関係を追加");
     }
     nextSteps.push("quick_validate.js で検証");
 

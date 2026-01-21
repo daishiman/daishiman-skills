@@ -43,6 +43,7 @@ allowed-tools:
 | Script First | 決定論的処理はスクリプトで実行（100%精度） |
 | Progressive Disclosure | 必要な時に必要なリソースのみ読み込み |
 | Custom Script Support | 24タイプに収まらない独自スクリプトも生成 |
+| Self-Contained Skills | 各スキルは独自のnode_modules・依存関係を持つ |
 
 ## モード一覧
 
@@ -50,9 +51,9 @@ allowed-tools:
 |--------|------|----------|
 | **collaborative** | ユーザー対話型スキル共創（推奨） | AskUserQuestionでインタビュー開始 |
 | **orchestrate** | 実行エンジン選択（Claude/Codex/連携） | AskUserQuestionでヒアリング開始 |
-| create | 要件が明確な場合の新規作成 | `detect_mode.js --request "新規スキル"` |
-| update | 既存スキル更新 | `detect_mode.js --request "更新" --skill-path <path>` |
-| improve-prompt | プロンプト改善 | `analyze_prompt.js --skill-path <path>` |
+| create | 要件が明確な場合の新規作成 | `.claude/skills/skill-creator/scripts/detect_mode.js --request "新規スキル"` |
+| update | 既存スキル更新 | `.claude/skills/skill-creator/scripts/detect_mode.js --request "更新" --skill-path <path>` |
+| improve-prompt | プロンプト改善 | `.claude/skills/skill-creator/scripts/analyze_prompt.js --skill-path <path>` |
 
 ## 実行エンジン（orchestrateモード）
 
@@ -71,7 +72,7 @@ allowed-tools:
 | **L3: Implementation** | 実装・詳細レベル | 「GitHub APIでPR作成」 |
 
 **抽象度が高いほど、インタビューを通じて具体化する。**
-📖 詳細: [references/abstraction-levels.md](references/abstraction-levels.md)
+📖 詳細: [references/abstraction-levels.md](.claude/skills/skill-creator/references/abstraction-levels.md)
 
 ---
 
@@ -100,96 +101,42 @@ Phase 0-4: 要件確認
   → ユーザー確認後、Phase 1へ
 ```
 
-📖 詳細: [agents/interview-user.md](agents/interview-user.md)
+📖 詳細: [agents/interview-user.md](.claude/skills/skill-creator/agents/interview-user.md)
 
 ---
 
 # Part 0.5: Orchestrate モード（実行エンジン選択）
 
 **スキル作成プロセス内**で、特定のサブタスクを最適な実行エンジンに委譲するモード。
-Codex専用スキルを作成するのではなく、**Claude Code上でCodexを補助的に利用**する。
-
-### 使用シナリオ
 
 ```
-skill-creator実行中
-    │
-    ├─ Phase X: 特定タスクでCodexを使いたい
-    │     ↓
-    │  Claude Code → Codex（タスク実行）→ Claude Code
-    │     ↓
-    └─ 続きのPhaseを継続
+skill-creator実行中 → 特定タスクでCodex使用 → Claude Code継続
 ```
-
-**重要**: Codexは一部のタスクを委譲するための補助機能であり、独立したCodex専用スキルを作成するものではない。
 
 ## ワークフロー
 
 ```
-Phase 1: タスクヒアリング（LLM - interview-execution-mode.md）
-  Q1: 何を実行したいですか？ → タスク内容特定
-  Q2: コードベースとの関連は？ → コンテキスト判定
-      ↓
-Phase 2: モード推奨・選択（LLM - interview-execution-mode.md）
-  Q3: 実行エンジンは？
-      → 推奨モードを提示、ユーザーが最終決定
-      → execution-mode.json を生成
+Phase 1-2: ヒアリング
+  → .claude/skills/skill-creator/agents/interview-execution-mode.md
+  タスク内容・コンテキスト判定 → モード推奨・選択
       ↓
 Phase 3: 実行（モード別分岐）
-  ┌─ claude: Claude Codeで直接実行
-  │
-  ├─ codex: （delegate-to-codex.md を読み込み）
-  │    [check_prerequisites.js] → [assign_codex.js]
-  │
-  └─ claude-to-codex: （delegate-to-codex.md を読み込み）
-       コンテキスト収集（LLM）→ [assign_codex.js] → 結果統合
+  claude: 直接実行
+  codex: .claude/skills/skill-creator/scripts/assign_codex.js
+  claude-to-codex: コンテキスト収集 → Codex
       ↓
-Phase 4: 結果確認（ユーザー確認）
-  → Codex結果の検証・統合・フィードバック
+Phase 4: 結果確認・統合
 ```
 
-## モード選択基準
-
-```
-[タスク分析]
-     │
-     ▼
-ファイル編集が必要? ──Yes──► claude（推奨）
-│
-No
-│
-▼
-Git操作が必要? ──Yes──► claude（推奨）
-│
-No
-│
-▼
-コードベース理解が必要? ──Yes──► claude or claude-to-codex
-│
-No
-│
-▼
-独立した分析/生成? ──Yes──► codex または claude
-│
-No
-│
-▼
-└──► ユーザーに確認
-```
-
-**重要**: 推奨は提示するが、最終決定は常にユーザー。
+📖 モード選択基準・詳細フローチャート: [references/execution-mode-guide.md](.claude/skills/skill-creator/references/execution-mode-guide.md)
 
 ## 関連リソース
 
-| リソース | 読み込みタイミング |
-|----------|-------------------|
-| [agents/interview-execution-mode.md](agents/interview-execution-mode.md) | Phase 1-2: ヒアリング時 |
-| [agents/delegate-to-codex.md](agents/delegate-to-codex.md) | Phase 3: Codex実行時 |
-| [references/execution-mode-guide.md](references/execution-mode-guide.md) | モード判断に迷った時 |
-| [references/codex-best-practices.md](references/codex-best-practices.md) | Codex利用時 |
-| [schemas/execution-mode.json](schemas/execution-mode.json) | モード選択結果の検証 |
-| [schemas/codex-task.json](schemas/codex-task.json) | Codexタスク定義の検証 |
-| [schemas/codex-result.json](schemas/codex-result.json) | Codex結果の検証 |
+| リソース | 読み込み条件 |
+|----------|-------------|
+| [interview-execution-mode.md](.claude/skills/skill-creator/agents/interview-execution-mode.md) | Phase 1-2 |
+| [delegate-to-codex.md](.claude/skills/skill-creator/agents/delegate-to-codex.md) | Codex実行時 |
+| [execution-mode-guide.md](.claude/skills/skill-creator/references/execution-mode-guide.md) | 判断に迷った時 |
 
 ---
 
@@ -197,24 +144,32 @@ No
 
 ```
 Phase 1: 分析（LLM）
-  analyze-request → extract-purpose → define-boundary
+  .claude/skills/skill-creator/agents/analyze-request.md
+  → .claude/skills/skill-creator/agents/extract-purpose.md
+  → .claude/skills/skill-creator/agents/define-boundary.md
       ↓
 Phase 2: 設計（LLM + Script検証）
-  select-anchors ─┐
-                  ├→ design-workflow → [validate-workflow]
-  define-trigger ─┘
+  .claude/skills/skill-creator/agents/select-anchors.md ─┐
+  .claude/skills/skill-creator/agents/define-trigger.md ─┤
+      → .claude/skills/skill-creator/agents/design-workflow.md
+      → .claude/skills/skill-creator/scripts/validate_workflow.js
       ↓
 Phase 3: 構造計画（LLM + Script検証）
-  plan-structure → [validate-plan]
+  .claude/skills/skill-creator/agents/plan-structure.md
+  → .claude/skills/skill-creator/scripts/validate_plan.js
       ↓
 Phase 4: 生成（Script）
-  [init-skill] → [generate-skill-md] → [generate-agents]
+  .claude/skills/skill-creator/scripts/init_skill.js
+  → .claude/skills/skill-creator/scripts/generate_skill_md.js
+  → .claude/skills/skill-creator/scripts/generate_agent.js
       ↓
-Phase 5: 検証（Script）
-  [validate-all] → [log-usage]
+Phase 5: フィードバック機構生成（Script）
+  → LOGS.md, EVALS.json, references/patterns.md を生成
+      ↓
+Phase 6: 検証（Script）
+  .claude/skills/skill-creator/scripts/validate_all.js
+  → .claude/skills/skill-creator/scripts/log_usage.js
 ```
-
-凡例: `[script]` = Script Task (100%精度)
 
 ---
 
@@ -232,7 +187,7 @@ Phase 5: 検証（Script）
 | 統合 | ai-tool, mcp-bridge, shell |
 | 汎用 | universal |
 
-📖 詳細: [references/script-types-catalog.md](references/script-types-catalog.md)
+📖 詳細: [references/script-types-catalog.md](.claude/skills/skill-creator/references/script-types-catalog.md)
 
 ## 生成ワークフロー
 
@@ -246,115 +201,147 @@ Phase 6: コード展開（Script）→ 実行可能スクリプト
 Phase 7: 検証（Script）
 ```
 
-📖 カスタムスクリプト: [agents/design-custom-script.md](agents/design-custom-script.md)
+📖 カスタムスクリプト: [agents/design-custom-script.md](.claude/skills/skill-creator/agents/design-custom-script.md)
 
 ---
 
-# Part 3: 自己改善ワークフロー
+# Part 3: フィードバック＆自己改善ワークフロー
+
+## 3.1 毎回実行後（必須）
+
+スキル実行後は必ずフィードバックを記録する：
+
+```bash
+# 成功時
+node .claude/skills/skill-creator/scripts/log_usage.js --result success --phase "Phase 4" --notes "完了"
+
+# 失敗時
+node .claude/skills/skill-creator/scripts/log_usage.js --result failure --phase "Phase 3" --error "ValidationError" --notes "理由"
+```
+
+**記録先**:
+| ファイル | 更新内容 |
+|----------|----------|
+| LOGS.md | 実行ログ（日時、結果、フェーズ、メモ） |
+| EVALS.json | メトリクス（成功率、実行回数、平均時間） |
+
+## 3.2 パターン発見時
+
+成功/失敗パターンを発見したら記録する：
 
 ```
-スキル使用 → [log_usage.js] → LOGS.mdに記録
+.claude/skills/skill-creator/agents/analyze-feedback.md → パターン検出
      ↓
-[collect_feedback.js] → 使用統計・エラーパターン分析
+.claude/skills/skill-creator/agents/save-patterns.md
+     → .claude/skills/skill-creator/references/patterns.md 更新
+```
+
+**パターン形式**:
+- 成功パターン: 状況 → アプローチ → 結果 → 適用条件
+- 失敗パターン: 状況 → 問題 → 原因 → 教訓
+
+## 3.3 改善サイクル
+
+定期的（10回実行ごと、またはエラー率閾値超過時）に改善を検討：
+
+```
+.claude/skills/skill-creator/scripts/collect_feedback.js → feedback-data.json出力
      ↓
-analyze-feedback.md → 改善機会特定
+.claude/skills/skill-creator/agents/analyze-feedback.md → パターン分析・改善提案生成
+     ├─ patterns[] あり → .claude/skills/skill-creator/agents/save-patterns.md
+     │                  → .claude/skills/skill-creator/references/patterns.md更新
+     └─ suggestions[] あり → .claude/skills/skill-creator/agents/design-self-improvement.md
      ↓
-design-self-improvement.md → 改善計画設計
-     ↓
-[apply_self_improvement.js] → 改善適用
-  --dry-run: 事前確認
+.claude/skills/skill-creator/scripts/apply_self_improvement.js → 改善適用
+  --dry-run: 事前確認（推奨）
   --backup: バックアップ作成
+  --auto-only: 自動適用可能なもののみ
 ```
 
-📖 詳細: [references/self-improvement-cycle.md](references/self-improvement-cycle.md)
+📖 詳細: [references/self-improvement-cycle.md](.claude/skills/skill-creator/references/self-improvement-cycle.md)
+
+## 3.4 フィードバック対象ファイル
+
+| ファイル | 用途 | 更新タイミング | スクリプト/エージェント |
+|----------|------|----------------|------------------------|
+| LOGS.md | 実行ログ | 毎回実行後 | [scripts/log_usage.js](.claude/skills/skill-creator/scripts/log_usage.js) |
+| EVALS.json | メトリクス | 毎回実行後 | [scripts/log_usage.js](.claude/skills/skill-creator/scripts/log_usage.js) |
+| references/patterns.md | 成功/失敗パターン | パターン発見時 | [agents/save-patterns.md](.claude/skills/skill-creator/agents/save-patterns.md) |
 
 ---
 
-# Part 4: Progressive Disclosure リソースマップ
+# Part 4: ライブラリ管理（Self-Contained Skills）
 
-リソースは**必要な時のみ**読み込む。
+スキルは自己完結型。依存関係は**スキルディレクトリ内**で管理し、PNPMを使用する。
 
-## agents/
+## 4.1 設計思想
 
-| Agent | 読み込み条件 |
-|-------|-------------|
-| [interview-user.md](agents/interview-user.md) | collaborativeモード時 |
-| [interview-execution-mode.md](agents/interview-execution-mode.md) | orchestrateモード時 |
-| [delegate-to-codex.md](agents/delegate-to-codex.md) | Codex委譲時 |
-| [analyze-request.md](agents/analyze-request.md) | createモード時 |
-| [extract-purpose.md](agents/extract-purpose.md) | 要求分析後 |
-| [define-boundary.md](agents/define-boundary.md) | 目的定義後 |
-| [define-trigger.md](agents/define-trigger.md) | 目的定義後 |
-| [select-anchors.md](agents/select-anchors.md) | 目的定義後 |
-| [design-workflow.md](agents/design-workflow.md) | ワークフロー設計時 |
-| [plan-structure.md](agents/plan-structure.md) | 構造計画時 |
-| [design-update.md](agents/design-update.md) | updateモード時 |
-| [improve-prompt.md](agents/improve-prompt.md) | improve-promptモード時 |
-| [analyze-script-requirement.md](agents/analyze-script-requirement.md) | スクリプト要件分析時 |
-| [design-script.md](agents/design-script.md) | スクリプト設計時 |
-| [design-custom-script.md](agents/design-custom-script.md) | カスタムスクリプト時 |
-| [generate-code.md](agents/generate-code.md) | コード生成時 |
-| [design-variables.md](agents/design-variables.md) | 変数設計時 |
-| [analyze-feedback.md](agents/analyze-feedback.md) | 改善分析時 |
-| [design-self-improvement.md](agents/design-self-improvement.md) | 改善計画時 |
+| 原則 | 説明 |
+|------|------|
+| 自己完結 | 各スキルが独自のnode_modules・package.jsonを持つ |
+| 分離 | プロジェクト本体の依存関係と干渉しない |
+| 再現性 | pnpm-lock.yamlで依存関係を固定 |
 
-## references/
+## 4.2 依存関係管理コマンド
 
-| Reference | 読み込み条件 |
-|-----------|-------------|
-| [interview-guide.md](references/interview-guide.md) | collaborativeモード時 |
-| [execution-mode-guide.md](references/execution-mode-guide.md) | orchestrateモード時 |
-| [codex-best-practices.md](references/codex-best-practices.md) | Codex利用時 |
-| [abstraction-levels.md](references/abstraction-levels.md) | 抽象度判定時 |
-| [script-types-catalog.md](references/script-types-catalog.md) | タイプ選択時 |
-| [runtime-guide.md](references/runtime-guide.md) | ランタイム設定時 |
-| [workflow-patterns.md](references/workflow-patterns.md) | ワークフロー設計時 |
-| [skill-structure.md](references/skill-structure.md) | 構造計画時 |
-| [self-improvement-cycle.md](references/self-improvement-cycle.md) | 自己改善時 |
+```bash
+# スキルの依存関係をインストール
+node .claude/skills/skill-creator/scripts/install_deps.js
 
-## scripts/
+# パッケージを追加
+node .claude/skills/skill-creator/scripts/add_dependency.js axios
 
-| Script | 用途 |
-|--------|------|
-| `detect_mode.js` | モード判定（create/update/improve-prompt/orchestrate） |
-| `detect_runtime.js` | ランタイム判定（node/python/bash） |
-| `check_prerequisites.js` | Codex事前条件チェック（git, codex CLI） |
-| `assign_codex.js` | Codexへのタスク委譲 |
-| `init_skill.js` | ディレクトリ初期化 |
-| `generate_skill_md.js` | SKILL.md生成 |
-| `generate_agent.js` | agents/*.md生成 |
-| `generate_script.js` | scripts/*.js生成 |
-| `generate_dynamic_code.js` | テンプレート変数展開 |
-| `validate_all.js` | 全体検証（構造・リンク・品質） |
-| `validate_structure.js` | 構造検証 |
-| `validate_links.js` | リンク検証 |
-| `validate_schema.js` | スキーマ検証 |
-| `validate_workflow.js` | ワークフロー検証 |
-| `validate_plan.js` | 構造計画検証 |
-| `quick_validate.js` | 簡易検証 |
-| `analyze_prompt.js` | プロンプト分析 |
-| `apply_updates.js` | 更新適用 |
-| `update_skill_list.js` | skill_list.md更新 |
-| `log_usage.js` | 使用記録 |
-| `collect_feedback.js` | フィードバック収集 |
-| `apply_self_improvement.js` | 改善適用 |
+# 開発依存関係として追加
+node .claude/skills/skill-creator/scripts/add_dependency.js typescript --dev
 
-## assets/
+# 他のスキルに対して実行
+node .claude/skills/skill-creator/scripts/install_deps.js --skill-path .claude/skills/my-skill
+```
 
-**エージェントテンプレート**: agent-template.md（Task仕様書形式）
+## 4.3 スキル構造（依存関係あり）
 
-**ベーステンプレート**: base-node.js, base-python.py, base-bash.sh, base-typescript.ts
+```
+.claude/skills/my-skill/
+├── package.json       # 依存関係定義
+├── pnpm-lock.yaml     # 依存関係ロック（自動生成）
+├── node_modules/      # 依存関係（スキル内に配置）
+├── SKILL.md
+├── scripts/
+│   └── my-script.js   # import from 'axios' 等が使用可能
+└── ...
+```
 
-**タイプ別テンプレート**: type-{type}.md （24タイプ対応）
+📖 詳細: [references/library-management.md](.claude/skills/skill-creator/references/library-management.md)
 
-## schemas/
+---
 
-**エージェント定義**: agent-definition.json（agent-template.md用変数スキーマ）
+# Part 5: Progressive Disclosure リソースマップ
 
-**Codex関連**:
-- execution-mode.json（実行モード選択結果）
-- codex-task.json（Codexタスク定義）
-- codex-result.json（Codex実行結果）
+リソースは**必要な時のみ**読み込む。詳細は [resource-map.md](.claude/skills/skill-creator/references/resource-map.md) を参照。
+
+## リソース概要
+
+| カテゴリ | 数 | 主な読み込み条件 |
+|----------|-----|-----------------|
+| agents/ | 20 | モード・Phase別に必要時のみ |
+| references/ | 23 | 設計・判断・詳細確認時 |
+| scripts/ | 25 | 決定論的処理実行時（utils.js共通） |
+| assets/ | 17 | 生成・テンプレート展開時 |
+| schemas/ | 23 | JSON検証時 |
+
+## 主要リソース（高頻度）
+
+| リソース | 読み込み条件 |
+|----------|-------------|
+| [agents/interview-user.md](.claude/skills/skill-creator/agents/interview-user.md) | collaborativeモード |
+| [agents/analyze-request.md](.claude/skills/skill-creator/agents/analyze-request.md) | createモード |
+| [scripts/utils.js](.claude/skills/skill-creator/scripts/utils.js) | 全スクリプト共通 |
+| [scripts/init_skill.js](.claude/skills/skill-creator/scripts/init_skill.js) | スキル初期化 |
+| [scripts/log_usage.js](.claude/skills/skill-creator/scripts/log_usage.js) | 毎回実行後 |
+| [references/script-commands.md](.claude/skills/skill-creator/references/script-commands.md) | スクリプト実行時 |
+| [references/resource-map.md](.claude/skills/skill-creator/references/resource-map.md) | 全リソース詳細 |
+
+📖 全リソース詳細: [references/resource-map.md](.claude/skills/skill-creator/references/resource-map.md)
 
 ---
 
@@ -373,7 +360,15 @@ design-self-improvement.md → 改善計画設計
 
 | Version | Date | Changes |
 |---------|------|---------|
-| **5.2.1** | **2026-01-15** | **Codex連携の目的明確化: スキル作成内サブタスク委譲用、Claude Code⇄Codexラウンドトリップパターン** |
+| **5.7.0** | **2026-01-21** | **SKILL.md最適化: Part 5をresource-map.mdに分離（485→375行、23%削減）、スクリプトutils.js統合完了** |
+| 5.6.1 | 2026-01-21 | DRYリファクタリング: utils.js共通モジュール作成、約270行の重複コード排除 |
+| 5.6.0 | 2026-01-21 | Self-Contained Skills: PNPM依存関係管理、package.json自動生成、install_deps.js/add_dependency.js追加 |
+| 5.5.2 | 2026-01-20 | 参照パス完全統一: ワークフロー図・コマンド例・テーブル内のすべての参照を完全パス化（105参照） |
+| 5.5.1 | 2026-01-20 | 参照パス統一: Markdownリンクをリポジトリルートからの相対パスに統一 |
+| 5.5.0 | 2026-01-20 | 最適化: SKILL.md 521→420行に削減、Part 0.5詳細をexecution-mode-guide.mdへ移動 |
+| 5.4.0 | 2026-01-20 | フィードバック機構強化: Part 3をフィードバック＆自己改善に拡張、save-patterns.mdエージェント追加 |
+| 5.3.0 | 2026-01-15 | Progressive Disclosure完全化: 全ファイル（19 refs, 23 schemas, 34 assets, 22 scripts）に読み込み条件追加 |
+| 5.2.1 | 2026-01-15 | Codex連携の目的明確化: スキル作成内サブタスク委譲用、Claude Code⇄Codexラウンドトリップパターン |
 | 5.2.0 | 2026-01-15 | Orchestrateモード追加: Codex連携機能、実行エンジン選択（claude/codex/claude-to-codex） |
 | 5.1.0 | 2026-01-15 | リファクタリング: SKILL.md簡素化、agents/フォーマット統一、workflow-patterns.md統合 |
 | 5.0.0 | 2026-01-15 | Collaborative First追加、抽象度レベル対応、カスタムスクリプト対応 |

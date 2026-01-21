@@ -39,7 +39,7 @@ Eric Evansのドメイン駆動設計の考え方を応用し、ユーザー要�
 | Domain-Driven Design (E. Evans) | ユビキタス言語でスキルの境界を定義 |
 | 18-skills.md §1.1               | Skillの定義と位置づけを理解        |
 
-> 詳細: See [references/overview.md](../references/overview.md)
+> 詳細: See [references/overview.md](.claude/skills/skill-creator/references/overview.md)
 
 ---
 

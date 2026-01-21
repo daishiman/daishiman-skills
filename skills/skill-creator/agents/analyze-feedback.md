@@ -148,9 +148,21 @@ node scripts/collect_feedback.js \
 node scripts/validate_schema.js \
   --input .tmp/feedback-analysis.json \
   --schema schemas/feedback-record.json
+```
 
-# 改善設計へ（次のLLM Task）
-# → design-self-improvement.md を読み込み
+**分岐処理**:
+
+| 条件 | 次のTask | 読み込みファイル |
+|------|----------|-----------------|
+| patterns[] にパターンあり | パターン保存 | save-patterns.md |
+| suggestions[] に提案あり | 改善設計 | design-self-improvement.md |
+
+```
+feedback-analysis.json
+     │
+     ├─ patterns[] あり → save-patterns.md → references/patterns.md 更新
+     │
+     └─ suggestions[] あり → design-self-improvement.md → 改善計画
 ```
 
 ---

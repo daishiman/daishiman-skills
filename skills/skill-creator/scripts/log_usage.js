@@ -4,10 +4,11 @@
  * スキル使用記録スクリプト
  *
  * 18-skills.md §7.3 に準拠したフィードバック記録を行います。
- * エージェントの最終Phaseで呼び出されることを想定しています。
+ * LOGS.mdに実行ログを追記し、EVALS.jsonのメトリクスを更新します。
  *
  * 使用例:
- *   node log_usage.js --result success --phase "Phase 4" --agent "skill-creator"
+ *   node log_usage.js --result success --phase "Phase 4" --notes "完了"
+ *   node log_usage.js --result failure --phase "Phase 3" --error "ValidationError"
  *
  * 終了コード:
  *   0: 成功
@@ -16,15 +17,16 @@
  */
 
 import { readFileSync, writeFileSync, appendFileSync, existsSync } from "fs";
-import { join, dirname } from "path";
-import { fileURLToPath } from "url";
+import { join } from "path";
+import {
+  EXIT_CODES,
+  getArg,
+  hasArg,
+  getSkillDir,
+  nowISO,
+} from "./utils.js";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SKILL_DIR = join(__dirname, "..");
-
-const EXIT_SUCCESS = 0;
-const EXIT_ERROR = 1;
-const EXIT_ARGS_ERROR = 2;
+const SKILL_DIR = getSkillDir(import.meta.url);
 
 function showHelp() {
   console.log(`
@@ -37,6 +39,8 @@ Options:
   --result <success|failure>  実行結果（必須）
   --phase <name>              実行したPhase名（任意）
   --agent <name>              実行したエージェント名（任意）
+  --duration <ms>             実行時間（ミリ秒、任意）
+  --error <type>              エラータイプ（failure時、任意）
   --notes <text>              追加のフィードバックメモ（任意）
   -h, --help                  このヘルプを表示
 
@@ -49,11 +53,6 @@ Files updated:
   - LOGS.md: 実行記録を追記
   - EVALS.json: メトリクスを更新（存在する場合）
   `);
-}
-
-function getArg(args, name) {
-  const index = args.indexOf(name);
-  return index !== -1 && args[index + 1] ? args[index + 1] : null;
 }
 
 function ensureLogsFile() {
@@ -81,31 +80,19 @@ function ensureEvalsFile() {
       levels: {
         1: {
           name: "Beginner",
-          requirements: {
-            min_usage_count: 0,
-            min_success_rate: 0,
-          },
+          requirements: { min_usage_count: 0, min_success_rate: 0 },
         },
         2: {
           name: "Intermediate",
-          requirements: {
-            min_usage_count: 5,
-            min_success_rate: 0.6,
-          },
+          requirements: { min_usage_count: 5, min_success_rate: 0.6 },
         },
         3: {
           name: "Advanced",
-          requirements: {
-            min_usage_count: 15,
-            min_success_rate: 0.75,
-          },
+          requirements: { min_usage_count: 15, min_success_rate: 0.75 },
         },
         4: {
           name: "Expert",
-          requirements: {
-            min_usage_count: 30,
-            min_success_rate: 0.85,
-          },
+          requirements: { min_usage_count: 30, min_success_rate: 0.85 },
         },
       },
       metrics: {
@@ -125,9 +112,9 @@ function ensureEvalsFile() {
 async function main() {
   const args = process.argv.slice(2);
 
-  if (args.includes("-h") || args.includes("--help")) {
+  if (hasArg(args, "-h", "--help")) {
     showHelp();
-    process.exit(EXIT_SUCCESS);
+    process.exit(EXIT_CODES.SUCCESS);
   }
 
   // 引数解析
@@ -141,10 +128,10 @@ async function main() {
     console.error(
       "Error: --result は success または failure を指定してください",
     );
-    process.exit(EXIT_ARGS_ERROR);
+    process.exit(EXIT_CODES.ARGS_ERROR);
   }
 
-  const timestamp = new Date().toISOString();
+  const timestamp = nowISO();
 
   // 1. LOGS.md に追記
   try {
@@ -163,7 +150,7 @@ async function main() {
     console.log(`✓ LOGS.md に記録を追記しました`);
   } catch (err) {
     console.error(`Error: LOGS.md の更新に失敗しました: ${err.message}`);
-    process.exit(EXIT_ERROR);
+    process.exit(EXIT_CODES.ERROR);
   }
 
   // 2. EVALS.json を更新
@@ -213,14 +200,14 @@ async function main() {
     console.log(`✓ EVALS.json を更新しました`);
   } catch (err) {
     console.error(`Error: EVALS.json の処理に失敗しました: ${err.message}`);
-    process.exit(EXIT_ERROR);
+    process.exit(EXIT_CODES.ERROR);
   }
 
   console.log(`\n✓ フィードバック記録完了: ${result}`);
-  process.exit(EXIT_SUCCESS);
+  process.exit(EXIT_CODES.SUCCESS);
 }
 
 main().catch((err) => {
   console.error(`Error: ${err.message}`);
-  process.exit(EXIT_ERROR);
+  process.exit(EXIT_CODES.ERROR);
 });
