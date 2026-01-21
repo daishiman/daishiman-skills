@@ -40,7 +40,7 @@
 | Enterprise Integration Patterns (Hohpe) | メッセージング/フロー設計 |
 | Workflow Patterns (van der Aalst)       | 制御フローパターンの選択  |
 
-> 詳細: See [references/workflow-patterns.md](../references/workflow-patterns.md)
+> 詳細: See [references/workflow-patterns.md](.claude/skills/skill-creator/references/workflow-patterns.md)
 
 ---
 

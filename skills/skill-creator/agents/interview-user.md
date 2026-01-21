@@ -110,7 +110,7 @@ AskUserQuestionツールを活用し、段階的にヒアリングを行い、�
 
 ```json
 {
-  "$schema": "../schemas/interview-result.json",
+  "$schema": ".claude/skills/skill-creator/schemas/interview-result.json",
   "abstractionLevel": "L1 | L2 | L3",
   "goal": "ユーザーが達成したいこと",
   "domain": "対象領域・コンテキスト",
@@ -188,7 +188,7 @@ AskUserQuestion:
 
 ### Phase 0-3〜0-6: 詳細ヒアリング
 
-📖 詳細: [references/interview-guide.md](../references/interview-guide.md)
+📖 詳細: [references/interview-guide.md](.claude/skills/skill-creator/references/interview-guide.md)
 
 ---
 

@@ -17,13 +17,14 @@
  */
 
 import { readFileSync, existsSync, readdirSync, statSync } from "fs";
-import { resolve, join, dirname } from "path";
-
-const EXIT_SUCCESS = 0;
-const EXIT_ERROR = 1;
-const EXIT_ARGS_ERROR = 2;
-const EXIT_FILE_NOT_FOUND = 3;
-const EXIT_VALIDATION_FAILED = 4;
+import { join, basename } from "path";
+import {
+  EXIT_CODES,
+  hasArg,
+  resolvePath,
+  normalizeLink,
+  extractLinks,
+} from "./utils.js";
 
 function showHelp() {
   console.log(`
@@ -52,30 +53,23 @@ Examples:
 `);
 }
 
-function resolvePath(p) {
-  if (p.startsWith("/")) return p;
-  return resolve(process.cwd(), p);
-}
-
+/**
+ * Markdownコンテンツからリンクを抽出（外部URL・アンカーを除外）
+ */
 function extractMarkdownLinks(content) {
-  const links = [];
-  // [text](path) 形式のリンクを抽出
-  const linkRegex = /\[([^\]]*)\]\(([^)]+)\)/g;
-  let match;
-  while ((match = linkRegex.exec(content)) !== null) {
-    const path = match[2];
-    // 外部URLは除外
-    if (!path.startsWith("http://") && !path.startsWith("https://") && !path.startsWith("#")) {
-      links.push(path);
-    }
-  }
-  return links;
+  return extractLinks(content).filter(
+    (link) =>
+      !link.startsWith("http://") &&
+      !link.startsWith("https://") &&
+      !link.startsWith("#")
+  );
 }
 
 function validateLinks(skillPath, verbose = false) {
   const errors = [];
   const warnings = [];
   const passed = [];
+  const skillName = basename(skillPath);
 
   // SKILL.md検証
   const skillMdPath = join(skillPath, "SKILL.md");
@@ -89,7 +83,8 @@ function validateLinks(skillPath, verbose = false) {
 
   // SKILL.md内のリンク検証
   for (const link of skillMdLinks) {
-    const linkPath = join(skillPath, link);
+    const normalizedLink = normalizeLink(link, skillName);
+    const linkPath = join(skillPath, normalizedLink);
     if (!existsSync(linkPath)) {
       errors.push(`SKILL.md: 壊れたリンク: ${link}`);
     } else {
@@ -107,12 +102,18 @@ function validateLinks(skillPath, verbose = false) {
       const agentLinks = extractMarkdownLinks(agentContent);
 
       for (const link of agentLinks) {
+        // リンクを正規化（.claude/skills/{skill-name}/ プレフィックスを除去）
+        const normalizedLink = normalizeLink(link, skillName);
+
         // agents/からの相対パスを解決
         let resolvedLink;
-        if (link.startsWith("../")) {
-          resolvedLink = join(skillPath, link.substring(3));
+        if (normalizedLink.startsWith("../")) {
+          resolvedLink = join(skillPath, normalizedLink.substring(3));
+        } else if (normalizedLink.startsWith("references/") || normalizedLink.startsWith("scripts/") || normalizedLink.startsWith("assets/") || normalizedLink.startsWith("schemas/")) {
+          // スキルディレクトリからの相対パス
+          resolvedLink = join(skillPath, normalizedLink);
         } else {
-          resolvedLink = join(agentsPath, link);
+          resolvedLink = join(agentsPath, normalizedLink);
         }
 
         if (!existsSync(resolvedLink)) {
@@ -172,25 +173,25 @@ function validateLinks(skillPath, verbose = false) {
 async function main() {
   const args = process.argv.slice(2);
 
-  if (args.includes("-h") || args.includes("--help")) {
+  if (hasArg(args, "-h", "--help")) {
     showHelp();
-    process.exit(EXIT_SUCCESS);
+    process.exit(EXIT_CODES.SUCCESS);
   }
 
-  const verbose = args.includes("--verbose");
+  const verbose = hasArg(args, "--verbose");
   const skillPath = args.find((arg) => !arg.startsWith("-"));
 
   if (!skillPath) {
     console.error("Error: スキルパスが指定されていません");
     showHelp();
-    process.exit(EXIT_ARGS_ERROR);
+    process.exit(EXIT_CODES.ARGS_ERROR);
   }
 
   const resolvedPath = resolvePath(skillPath);
 
   if (!existsSync(resolvedPath)) {
     console.error(`Error: パスが存在しません: ${resolvedPath}`);
-    process.exit(EXIT_FILE_NOT_FOUND);
+    process.exit(EXIT_CODES.FILE_NOT_FOUND);
   }
 
   console.log(`リンクを検証中: ${skillPath}`);
@@ -210,14 +211,14 @@ async function main() {
     console.log("\n✗ エラー:");
     errors.forEach((e) => console.log(`  - ${e}`));
     console.log(`\n結果: ✗ 検証失敗 (${passed.length}パス, ${errors.length}エラー, ${warnings.length}警告)`);
-    process.exit(EXIT_VALIDATION_FAILED);
+    process.exit(EXIT_CODES.VALIDATION_FAILED);
   }
 
   console.log(`\n結果: ✓ 検証成功 (${passed.length}パス, ${errors.length}エラー, ${warnings.length}警告)`);
-  process.exit(EXIT_SUCCESS);
+  process.exit(EXIT_CODES.SUCCESS);
 }
 
 main().catch((err) => {
   console.error(`Error: ${err.message}`);
-  process.exit(EXIT_ERROR);
+  process.exit(EXIT_CODES.ERROR);
 });

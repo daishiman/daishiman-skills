@@ -15,16 +15,17 @@
  *   2: 引数エラー
  */
 
-import { existsSync, writeFileSync } from "fs";
-import { resolve, dirname, join } from "path";
-import { fileURLToPath } from "url";
+import { existsSync, writeFileSync, mkdirSync } from "fs";
+import { dirname } from "path";
+import {
+  EXIT_CODES,
+  getArg,
+  hasArg,
+  resolvePath,
+  getSkillDir,
+} from "./utils.js";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SKILL_DIR = join(__dirname, "..");
-
-const EXIT_SUCCESS = 0;
-const EXIT_ERROR = 1;
-const EXIT_ARGS_ERROR = 2;
+const SKILL_DIR = getSkillDir(import.meta.url);
 
 // モード判定のキーワード
 const MODE_KEYWORDS = {
@@ -65,11 +66,6 @@ Examples:
   node scripts/detect_mode.js --request "新しいスキルを作成"
   node scripts/detect_mode.js --request "skill-creatorのプロンプトを改善" --skill-path .claude/skills/skill-creator
 `);
-}
-
-function getArg(args, name) {
-  const index = args.indexOf(name);
-  return index !== -1 && args[index + 1] ? args[index + 1] : null;
 }
 
 function detectMode(request) {
@@ -122,9 +118,9 @@ function detectMode(request) {
 async function main() {
   const args = process.argv.slice(2);
 
-  if (args.includes("-h") || args.includes("--help")) {
+  if (hasArg(args, "-h", "--help")) {
     showHelp();
-    process.exit(EXIT_SUCCESS);
+    process.exit(EXIT_CODES.SUCCESS);
   }
 
   const request = getArg(args, "--request");
@@ -133,7 +129,7 @@ async function main() {
 
   if (!request) {
     console.error("Error: --request は必須です");
-    process.exit(EXIT_ARGS_ERROR);
+    process.exit(EXIT_CODES.ARGS_ERROR);
   }
 
   // モード判定
@@ -144,7 +140,7 @@ async function main() {
   let skillName = null;
 
   if (skillPath) {
-    const resolvedPath = resolve(process.cwd(), skillPath);
+    const resolvedPath = resolvePath(skillPath);
     skillExists = existsSync(resolvedPath);
     if (skillExists) {
       skillName = skillPath.split("/").pop();
@@ -179,14 +175,14 @@ async function main() {
   };
 
   // 出力ディレクトリ作成
-  const outputDir = dirname(resolve(process.cwd(), outputPath));
+  const resolvedOutputPath = resolvePath(outputPath);
+  const outputDir = dirname(resolvedOutputPath);
   if (!existsSync(outputDir)) {
-    const { mkdirSync } = await import("fs");
     mkdirSync(outputDir, { recursive: true });
   }
 
   // 結果を出力
-  writeFileSync(resolve(process.cwd(), outputPath), JSON.stringify(result, null, 2), "utf-8");
+  writeFileSync(resolvedOutputPath, JSON.stringify(result, null, 2), "utf-8");
 
   console.log(`✓ モード判定完了: ${detection.mode}`);
   console.log(`  信頼度: ${detection.confidence}`);
@@ -196,10 +192,10 @@ async function main() {
     console.log(`\n⚠ 信頼度が低いです。ユーザーに確認することを推奨します。`);
   }
 
-  process.exit(EXIT_SUCCESS);
+  process.exit(EXIT_CODES.SUCCESS);
 }
 
 main().catch((err) => {
   console.error(`Error: ${err.message}`);
-  process.exit(EXIT_ERROR);
+  process.exit(EXIT_CODES.ERROR);
 });

@@ -35,6 +35,24 @@ const STANDARD_DIRS = ["agents", "scripts", "schemas", "references", "assets"];
 const REQUIRED_FILES = ["SKILL.md"];
 const FORBIDDEN_FILES = ["README.md", "readme.md", "index.md", "INDEX.md"];
 
+/**
+ * リンクパスを正規化
+ * .claude/skills/{skill-name}/ 形式のプレフィックスを除去
+ */
+function normalizeLink(link, skillName) {
+  const prefixPatterns = [
+    new RegExp(`^\\.claude/skills/${skillName}/`),
+    new RegExp(`^/\\.claude/skills/${skillName}/`),
+  ];
+
+  for (const pattern of prefixPatterns) {
+    if (pattern.test(link)) {
+      return link.replace(pattern, "");
+    }
+  }
+  return link;
+}
+
 function showHelp() {
   console.log(`
 全体検証スクリプト
@@ -197,6 +215,7 @@ function validateLinks(skillPath) {
   const errors = [];
   const warnings = [];
   const skillMdPath = join(skillPath, "SKILL.md");
+  const skillName = basename(skillPath);
 
   if (!existsSync(skillMdPath)) {
     return { errors: [], warnings };
@@ -217,8 +236,11 @@ function validateLinks(skillPath) {
       continue;
     }
 
+    // リンクパスを正規化（.claude/skills/{skill-name}/ プレフィックスを除去）
+    const normalizedPath = normalizeLink(linkPath, skillName);
+
     // 相対パスの検証
-    const resolvedPath = join(skillPath, linkPath);
+    const resolvedPath = join(skillPath, normalizedPath);
     if (!existsSync(resolvedPath)) {
       errors.push({
         type: "broken_link",

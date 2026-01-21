@@ -38,7 +38,7 @@ Claudeが学習済みの枠組みや一次資料を短い参照行として配�
 | ----------------- | ---------------------------- |
 | 18-skills.md §2.2 | 知識圧縮アンカーの規則に準拠 |
 
-> 詳細: See [references/core-principles.md](../references/core-principles.md)
+> 詳細: See [references/core-principles.md](.claude/skills/skill-creator/references/core-principles.md)
 
 ---
 

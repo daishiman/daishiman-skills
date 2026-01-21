@@ -39,7 +39,7 @@ Clean Architectureの原則を応用し、スキルのフォルダ構造とフ�
 | 18-skills.md §3             | 標準フォルダ構造に準拠     |
 | Clean Architecture (Martin) | 責務の分離原則を適用       |
 
-> 詳細: See [references/skill-structure.md](../references/skill-structure.md)
+> 詳細: See [references/skill-structure.md](.claude/skills/skill-creator/references/skill-structure.md)
 
 ---
 

@@ -409,5 +409,5 @@ const skillTemplate = `
 
 ## 関連リソース
 
-- **スキーマ**: See [schemas/variable-definition.json](../schemas/variable-definition.json)
+- **スキーマ**: See [schemas/variable-definition.json](.claude/skills/skill-creator/schemas/variable-definition.json)
 - **タイプカタログ**: See [script-types-catalog.md](script-types-catalog.md)

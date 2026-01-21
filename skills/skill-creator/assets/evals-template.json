@@ -1,0 +1,23 @@
+{
+  "skillName": "{{skill-name}}",
+  "currentLevel": 1,
+  "metrics": {
+    "totalUsageCount": 0,
+    "successCount": 0,
+    "failureCount": 0,
+    "successRate": 0,
+    "averageDuration": 0,
+    "lastEvaluated": null
+  },
+  "levelHistory": [
+    {
+      "level": 1,
+      "achievedAt": "{{creation-date}}"
+    }
+  ],
+  "patterns": {
+    "commonErrors": [],
+    "slowPhases": [],
+    "successPatterns": []
+  }
+}

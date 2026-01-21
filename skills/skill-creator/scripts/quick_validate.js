@@ -18,12 +18,12 @@
 
 import { readFileSync, existsSync, statSync, readdirSync } from "fs";
 import { join, basename } from "path";
-
-const EXIT_SUCCESS = 0;
-const EXIT_ERROR = 1;
-const EXIT_ARGS_ERROR = 2;
-const EXIT_FILE_MISSING = 3;
-const EXIT_VALIDATION_ERROR = 4;
+import {
+  EXIT_CODES,
+  hasArg,
+  parseFrontmatter,
+  ValidationResult,
+} from "./utils.js";
 
 function showHelp() {
   console.log(`
@@ -56,19 +56,21 @@ Examples:
   `);
 }
 
-class ValidationResult {
+/**
+ * スキル構造検証クラス（quick_validate用拡張）
+ */
+class QuickValidationResult extends ValidationResult {
   constructor() {
-    this.errors = [];
-    this.warnings = [];
+    super();
     this.passed = [];
   }
 
   addError(message) {
-    this.errors.push(message);
+    this.errors.push({ message });
   }
 
   addWarning(message) {
-    this.warnings.push(message);
+    this.warnings.push({ message });
   }
 
   addPassed(message) {
@@ -90,12 +92,12 @@ class ValidationResult {
 
     if (this.warnings.length > 0) {
       console.log("\n⚠ 警告:");
-      this.warnings.forEach((w) => console.log(`  - ${w}`));
+      this.warnings.forEach((w) => console.log(`  - ${w.message || w}`));
     }
 
     if (this.errors.length > 0) {
       console.log("\n✗ エラー:");
-      this.errors.forEach((e) => console.log(`  - ${e}`));
+      this.errors.forEach((e) => console.log(`  - ${e.message || e}`));
     }
 
     console.log(
@@ -104,53 +106,8 @@ class ValidationResult {
   }
 }
 
-function parseFrontmatter(content) {
-  const match = content.match(/^---\n([\s\S]*?)\n---/);
-  if (!match) return null;
-
-  const frontmatter = {};
-  const lines = match[1].split("\n");
-  let currentKey = null;
-  let multilineValue = "";
-  let inMultiline = false;
-
-  for (const line of lines) {
-    if (inMultiline) {
-      if (
-        line.match(/^\S/) &&
-        !line.startsWith(" ") &&
-        !line.startsWith("\t")
-      ) {
-        frontmatter[currentKey] = multilineValue.trim();
-        inMultiline = false;
-      } else {
-        multilineValue += line + "\n";
-        continue;
-      }
-    }
-
-    const keyMatch = line.match(/^(\w+(?:-\w+)*):\s*(.*)/);
-    if (keyMatch) {
-      currentKey = keyMatch[1];
-      const value = keyMatch[2];
-      if (value === "|" || value === ">") {
-        inMultiline = true;
-        multilineValue = "";
-      } else if (value) {
-        frontmatter[currentKey] = value;
-      }
-    }
-  }
-
-  if (inMultiline && currentKey) {
-    frontmatter[currentKey] = multilineValue.trim();
-  }
-
-  return frontmatter;
-}
-
 function validateSkill(skillPath, verbose = false) {
-  const result = new ValidationResult();
+  const result = new QuickValidationResult();
   const skillName = basename(skillPath);
 
   // 1. SKILL.md の存在確認
@@ -300,33 +257,33 @@ function validateSkill(skillPath, verbose = false) {
 async function main() {
   const args = process.argv.slice(2);
 
-  if (args.includes("-h") || args.includes("--help")) {
+  if (hasArg(args, "-h", "--help")) {
     showHelp();
-    process.exit(EXIT_SUCCESS);
+    process.exit(EXIT_CODES.SUCCESS);
   }
 
-  const verbose = args.includes("--verbose");
+  const verbose = hasArg(args, "--verbose");
   const skillPath = args.find((arg) => !arg.startsWith("-"));
 
   if (!skillPath) {
     console.error("Error: スキルパスが指定されていません");
     showHelp();
-    process.exit(EXIT_ARGS_ERROR);
+    process.exit(EXIT_CODES.ARGS_ERROR);
   }
 
   if (!existsSync(skillPath)) {
     console.error(`Error: パスが存在しません: ${skillPath}`);
-    process.exit(EXIT_FILE_MISSING);
+    process.exit(EXIT_CODES.FILE_NOT_FOUND);
   }
 
   console.log(`スキルを検証中: ${skillPath}`);
   const result = validateSkill(skillPath, verbose);
   result.print(verbose);
 
-  process.exit(result.isValid() ? EXIT_SUCCESS : EXIT_VALIDATION_ERROR);
+  process.exit(result.isValid() ? EXIT_CODES.SUCCESS : EXIT_CODES.VALIDATION_FAILED);
 }
 
 main().catch((err) => {
   console.error(`Error: ${err.message}`);
-  process.exit(EXIT_ERROR);
+  process.exit(EXIT_CODES.ERROR);
 });
