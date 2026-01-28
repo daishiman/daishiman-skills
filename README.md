@@ -3,7 +3,6 @@
 スキルを作成・更新・プロンプト改善するためのメタスキル。
 ユーザーと対話しながら共創し、抽象的なアイデアから具体的な実装まで柔軟に対応します。
 
-[![Version](https://img.shields.io/badge/version-5.2.1-blue.svg)](./docs/CHANGELOG.md)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-Plugin-purple.svg)]()
 
 ---
@@ -15,7 +14,7 @@
 /plugin marketplace add daishiman/meta-skill-creator
 
 # プラグインをインストール
-/plugin install daishi-skill-creator@meta-skill-creator
+/plugin install daishiman-skill-creator
 ```
 
 Claude Code を再起動して完了。
