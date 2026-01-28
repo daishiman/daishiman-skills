@@ -6,6 +6,89 @@
 
 ---
 
+## [7.1.2] - 2026-01-28
+
+### Changed
+- SKILL.mdからハードコード数値を削除（動的に変わるリソース数等）
+- READMEからバージョンバッジを削除（手動管理が難しいため）
+- インストールコマンドを修正（daishi → daishiman）
+
+---
+
+## [7.1.1] - 2026-01-28
+
+### Changed
+- `script-llm-patterns.md`リファクタリング: 責務分離を明確化
+- 関連リソースの整理
+
+---
+
+## [7.1.0] - 2026-01-28
+
+### Added
+- `script-llm-patterns.md`: スクリプト/LLM責務分離パターンガイド
+
+---
+
+## [7.0.1] - 2026-01-24
+
+### Fixed
+- `custom-script-design.json`スキーマ追加
+- 壊れた参照リンクの修正
+
+---
+
+## [7.0.0] - 2026-01-24
+
+### Changed
+- **大規模リファクタリング**: SKILL.md 481→130行（73%削減）
+- 詳細な説明をreferencesディレクトリに委譲
+- Progressive Disclosureの徹底
+
+---
+
+## [6.2.0] - 2026-01-24
+
+### Added
+- API推薦機能: `recommend-integrations.md`
+- API マッピングガイド: `goal-to-api-mapping.md`
+
+---
+
+## [6.1.0] - 2026-01-24
+
+### Added
+- 自動リソース選択機能: `select-resources.md`
+
+---
+
+## [6.0.0] - 2026-01-24
+
+### Added
+- **オーケストレーション機能**: 複数スキルの連携実行
+- **ドキュメント生成機能**: API仕様書・セットアップガイドの自動生成
+- `orchestration-guide.md`: オーケストレーションガイド
+- `api-docs-standards.md`: APIドキュメント規約
+
+---
+
+## [5.7.0] - 2026-01-21
+
+### Changed
+- Part 5（リソース一覧）を`resource-map.md`に分離
+- SKILL.mdのさらなる簡素化
+
+---
+
+## [5.6.0] - 2026-01-21
+
+### Added
+- **Self-Contained Skills**: 各スキルが独自の依存関係を管理
+- PNPM対応: `pnpm-workspace.yaml`サポート
+- `install_deps.js`: 依存関係自動インストールスクリプト
+
+---
+
 ## [5.2.1] - 2026-01-15
 
 ### Changed

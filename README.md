@@ -14,7 +14,7 @@
 /plugin marketplace add daishiman/meta-skill-creator
 
 # プラグインをインストール
-/plugin install daishi-skill-creator@meta-skill-creator
+/plugin install daishiman-skill-creator
 ```
 
 Claude Code を再起動して完了。
